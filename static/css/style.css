@@ -493,13 +493,26 @@ button { font-family: inherit; cursor: pointer; }
     border-radius: var(--radius);
     transition: border-color .2s;
 }
-.provider-badge:hover { border-color: var(--primary); }
+.provider-badge {
+    text-decoration: none;
+    color: var(--text);
+}
+.provider-badge:hover {
+    border-color: var(--primary);
+    text-decoration: none;
+}
 .provider-badge img {
     width: 30px;
     height: 30px;
     border-radius: 6px;
 }
 .provider-badge span { font-size: 0.85rem; }
+.provider-link-icon {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    transition: color .2s;
+}
+.provider-badge:hover .provider-link-icon { color: var(--primary); }
 
 .no-providers {
     color: var(--text-muted);

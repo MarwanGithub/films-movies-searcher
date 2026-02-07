@@ -262,13 +262,13 @@ function renderDetail(data, mediaType) {
 
         <div class="detail-section">
             <h2>Where to Watch in Egypt</h2>
-            ${renderProviders(egProv)}
+            ${renderProviders(egProv, title, egProv.link)}
         </div>
 
         ${hasProviders(deProv) ? `
         <div class="detail-section de-section">
             <h2>Available in Germany <span class="hint">(likely has German dub)</span></h2>
-            ${renderProviders(deProv)}
+            ${renderProviders(deProv, title, deProv.link)}
         </div>` : ''}
 
         ${cast.length ? `
@@ -307,31 +307,61 @@ function handleWatchlistToggle(e) {
 
 // ───────────────────────── Providers ─────────────────────────
 
+// Search URL templates for known platforms (provider_id → URL builder)
+const PROVIDER_SEARCH_URLS = {
+    8:    q => `https://www.netflix.com/search?q=${q}`,
+    337:  q => `https://www.disneyplus.com/search/${q}`,
+    119:  q => `https://www.amazon.eg/s?k=${q}&i=instant-video`,
+    9:    q => `https://www.amazon.com/s?k=${q}&i=instant-video`,
+    350:  q => `https://tv.apple.com/search?term=${q}`,
+    283:  q => `https://www.crunchyroll.com/search?q=${q}`,
+    531:  q => `https://www.paramountplus.com/search?q=${q}`,
+    1899: q => `https://www.max.com/search?q=${q}`,
+    2:    q => `https://tv.apple.com/search?term=${q}`,
+    3:    q => `https://play.google.com/store/search?q=${q}&c=movies`,
+    192:  q => `https://www.youtube.com/results?search_query=${q}+full+movie`,
+    73:   q => `https://www.tubi.tv/search/${q}`,
+    386:  q => `https://www.peacocktv.com/search?q=${q}`,
+    1773: q => `https://shahid.mbc.net/en/search?q=${q}`,
+};
+
+function getProviderUrl(providerId, title) {
+    const q = encodeURIComponent(title);
+    const builder = PROVIDER_SEARCH_URLS[providerId];
+    return builder ? builder(q) : null;
+}
+
 function hasProviders(p) {
     return !!(p.flatrate || p.rent || p.buy);
 }
 
-function renderProviders(providers) {
+function renderProviders(providers, title, tmdbLink) {
     if (!hasProviders(providers)) {
         return '<p class="no-providers">Not available on any streaming platform in this region.</p>';
     }
     let html = '';
-    if (providers.flatrate) html += providerGroup('Stream', providers.flatrate);
-    if (providers.rent)     html += providerGroup('Rent', providers.rent);
-    if (providers.buy)      html += providerGroup('Buy', providers.buy);
+    if (providers.flatrate) html += providerGroup('Stream', providers.flatrate, title, tmdbLink);
+    if (providers.rent)     html += providerGroup('Rent', providers.rent, title, tmdbLink);
+    if (providers.buy)      html += providerGroup('Buy', providers.buy, title, tmdbLink);
     return html;
 }
 
-function providerGroup(label, list) {
+function providerGroup(label, list, title, tmdbLink) {
     return `
         <div class="provider-group">
             <h3>${label}</h3>
             <div class="provider-list">
-                ${list.map(p => `
-                    <div class="provider-badge">
+                ${list.map(p => {
+                    const url = getProviderUrl(p.provider_id, title || '') || tmdbLink || '#';
+                    return `
+                    <a href="${url}" target="_blank" rel="noopener"
+                       class="provider-badge" onclick="event.stopPropagation()"
+                       title="Search on ${escapeAttr(p.provider_name)}">
                         <img src="${TMDB_IMG}/original${p.logo_path}" alt="${escapeAttr(p.provider_name)}">
                         <span>${escapeHtml(p.provider_name)}</span>
-                    </div>`).join('')}
+                        <span class="provider-link-icon">&#8599;</span>
+                    </a>`;
+                }).join('')}
             </div>
         </div>`;
 }
