@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamFinder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+    <!-- ========== Navigation ========== -->
+    <nav id="navbar">
+        <div class="nav-brand">StreamFinder</div>
+        <div class="nav-links">
+            <a href="#" data-view="search" class="active">Search</a>
+            <a href="#" data-view="calendar">Calendar</a>
+            <a href="#" data-view="watchlist">Watchlist <span id="watchlist-count" class="badge">0</span></a>
+            <a href="#" data-view="optimizer">Optimizer</a>
+        </div>
+    </nav>
+
+    <!-- ========== Search View ========== -->
+    <main id="view-search" class="view active">
+        <div class="search-hero">
+            <h1 class="hero-title">Find where to stream anything in Egypt</h1>
+            <div class="search-box">
+                <input type="text" id="search-input"
+                       placeholder="Search movies, TV shows, anime..."
+                       autocomplete="off">
+                <button id="search-btn">Search</button>
+            </div>
+            <div class="filter-tabs">
+                <button data-type="multi" class="active">All</button>
+                <button data-type="movie">Movies</button>
+                <button data-type="tv">TV Shows</button>
+            </div>
+        </div>
+        <div id="loading" class="loading-spinner hidden">Searching...</div>
+        <div id="results-grid" class="card-grid"></div>
+        <div id="no-results" class="empty-state hidden">
+            <p>No results found.</p>
+            <p class="muted">Try a different search term.</p>
+        </div>
+        <div id="load-more-container" class="load-more hidden">
+            <button id="load-more-btn" class="btn-secondary">Load More</button>
+        </div>
+    </main>
+
+    <!-- ========== Detail View ========== -->
+    <main id="view-detail" class="view">
+        <button class="back-button" onclick="goBack()">&#8592; Back</button>
+        <div id="detail-content"></div>
+    </main>
+
+    <!-- ========== Person View ========== -->
+    <main id="view-person" class="view">
+        <button class="back-button" onclick="goBack()">&#8592; Back</button>
+        <div id="person-content"></div>
+    </main>
+
+    <!-- ========== Watchlist View ========== -->
+    <main id="view-watchlist" class="view">
+        <div class="view-header">
+            <h1>My Watchlist</h1>
+            <button id="optimize-btn" class="btn-primary" onclick="runOptimizer()">
+                Optimize Subscriptions
+            </button>
+        </div>
+        <div id="watchlist-grid" class="card-grid"></div>
+        <div id="watchlist-empty" class="empty-state hidden">
+            <p>Your watchlist is empty.</p>
+            <p class="muted">Search for titles and add them here to use the optimizer.</p>
+        </div>
+    </main>
+
+    <!-- ========== Calendar View ========== -->
+    <main id="view-calendar" class="view">
+        <div class="view-header">
+            <h1>Episode Calendar</h1>
+            <p class="muted">Upcoming episodes from your watchlist (next 150 days)</p>
+        </div>
+        <div id="calendar-loading" class="loading-spinner hidden">
+            Loading upcoming episodes...
+        </div>
+        <div id="calendar-content"></div>
+        <div id="calendar-empty" class="empty-state hidden">
+            <p>No upcoming episodes found.</p>
+            <p class="muted">Add TV shows to your watchlist to track new episodes.</p>
+        </div>
+    </main>
+
+    <!-- ========== Optimizer View ========== -->
+    <main id="view-optimizer" class="view">
+        <div class="view-header">
+            <button class="back-button" onclick="navigateTo('watchlist')">&#8592; Back to Watchlist</button>
+            <h1>Subscription Optimizer</h1>
+        </div>
+        <p class="muted optimizer-subtitle">Finds the best platform combination for your watchlist.</p>
+        <div id="optimizer-loading" class="loading-spinner hidden">
+            Analysing your watchlist... this may take a moment.
+        </div>
+        <div id="optimizer-results"></div>
+    </main>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
