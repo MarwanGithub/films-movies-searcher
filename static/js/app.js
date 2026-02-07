@@ -53,6 +53,10 @@ function navigateTo(view, pushHistory = true) {
     state.currentView = view;
     window.scrollTo(0, 0);
 
+    // Show nav search bar on all views except the main search page
+    const navSearch = document.getElementById('nav-search-wrapper');
+    if (navSearch) navSearch.classList.toggle('hidden', view === 'search');
+
     if (view === 'watchlist') renderWatchlist();
     if (view === 'calendar') loadCalendar();
 }
@@ -91,12 +95,71 @@ async function apiDelete(endpoint) {
 
 // ───────────────────────── Search ─────────────────────────
 
+let acDebounceTimer = null;
+let acAbortController = null;
+let acActiveIndex = -1;
+let acActiveDropdown = null;  // tracks which dropdown is currently active
+
 function initSearch() {
     const input = document.getElementById('search-input');
     const btn   = document.getElementById('search-btn');
 
-    input.addEventListener('keydown', e => { if (e.key === 'Enter') performSearch(); });
-    btn.addEventListener('click', performSearch);
+    input.addEventListener('keydown', e => {
+        const dd = document.getElementById('autocomplete-dropdown');
+        const items = dd.querySelectorAll('.ac-item');
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            acActiveIndex = Math.min(acActiveIndex + 1, items.length - 1);
+            updateAcHighlight(items);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            acActiveIndex = Math.max(acActiveIndex - 1, -1);
+            updateAcHighlight(items);
+        } else if (e.key === 'Enter') {
+            if (acActiveIndex >= 0 && items[acActiveIndex]) {
+                e.preventDefault();
+                items[acActiveIndex].click();
+            } else {
+                closeAutocomplete();
+                performSearch();
+            }
+        } else if (e.key === 'Escape') {
+            closeAutocomplete();
+        }
+    });
+
+    input.addEventListener('input', () => {
+        const q = input.value.trim();
+        if (q.length < 2) { closeAutocomplete(); return; }
+        clearTimeout(acDebounceTimer);
+        acDebounceTimer = setTimeout(() => fetchAutocomplete(q, 'autocomplete-dropdown'), 350);
+    });
+
+    // Close dropdown on outside click
+    document.addEventListener('click', e => {
+        if (!e.target.closest('.search-box-wrapper')) {
+            const dd = document.getElementById('autocomplete-dropdown');
+            if (dd && !dd.classList.contains('hidden')) {
+                dd.classList.add('hidden');
+                dd.innerHTML = '';
+            }
+        }
+    });
+
+    // Re-open on focus if there's text
+    input.addEventListener('focus', () => {
+        const q = input.value.trim();
+        if (q.length >= 2) {
+            clearTimeout(acDebounceTimer);
+            acDebounceTimer = setTimeout(() => fetchAutocomplete(q, 'autocomplete-dropdown'), 200);
+        }
+    });
+
+    btn.addEventListener('click', () => { closeAutocomplete(); performSearch(); });
+
+    // Nav search bar (on non-search views)
+    initNavSearch();
 
     // Filter tabs
     document.querySelectorAll('.filter-tabs button').forEach(tab => {
@@ -110,6 +173,154 @@ function initSearch() {
 
     // Load-more
     document.getElementById('load-more-btn').addEventListener('click', loadMore);
+}
+
+async function fetchAutocomplete(query, dropdownId) {
+    // Cancel any in-flight request
+    if (acAbortController) acAbortController.abort();
+    acAbortController = new AbortController();
+    acActiveDropdown = dropdownId;
+
+    try {
+        const resp = await fetch(
+            `/api/search?q=${encodeURIComponent(query)}&type=${state.searchType}&page=1`,
+            { signal: acAbortController.signal }
+        );
+        if (!resp.ok) return;
+        const data = await resp.json();
+        renderAutocomplete(data.results.slice(0, 6), dropdownId);
+    } catch (err) {
+        if (err.name !== 'AbortError') console.error('Autocomplete error:', err);
+    }
+}
+
+function renderAutocomplete(results, dropdownId) {
+    const dropdown = document.getElementById(dropdownId);
+    if (!dropdown) return;
+    acActiveIndex = -1;
+
+    if (!results.length) {
+        dropdown.innerHTML = '<div class="ac-hint">No results found</div>';
+        dropdown.classList.remove('hidden');
+        return;
+    }
+
+    dropdown.innerHTML = results.map((item, i) => {
+        const title  = item.title || item.name || 'Unknown';
+        const date   = item.release_date || item.first_air_date || '';
+        const year   = date ? date.substring(0, 4) : '';
+        const type   = item.media_type === 'movie' ? 'Movie' : 'TV';
+        const rating = item.vote_average ? item.vote_average.toFixed(1) : '';
+        const poster = item.poster_path ? `${TMDB_IMG}/w92${item.poster_path}` : '';
+
+        return `
+            <div class="ac-item" data-index="${i}"
+                 onclick="acSelect('${item.media_type}', ${item.id})"
+                 onmouseenter="acActiveIndex=${i};updateAcHighlight(document.querySelectorAll('#${dropdownId} .ac-item'))">
+                <div class="ac-poster">
+                    ${poster
+                        ? `<img src="${poster}" alt="${escapeAttr(title)}" loading="lazy">`
+                        : `<div class="ac-poster-empty">${escapeHtml(title.charAt(0))}</div>`}
+                </div>
+                <div class="ac-info">
+                    <div class="ac-title">${escapeHtml(title)}</div>
+                    <div class="ac-meta">
+                        <span class="ac-type-badge">${type}</span>
+                        ${year ? `<span>${year}</span>` : ''}
+                        ${rating ? `<span class="ac-rating">${rating}</span>` : ''}
+                    </div>
+                </div>
+            </div>`;
+    }).join('');
+
+    dropdown.classList.remove('hidden');
+}
+
+function updateAcHighlight(items) {
+    items.forEach((el, i) => el.classList.toggle('ac-active', i === acActiveIndex));
+    if (acActiveIndex >= 0 && items[acActiveIndex]) {
+        items[acActiveIndex].scrollIntoView({ block: 'nearest' });
+    }
+}
+
+function acSelect(mediaType, id) {
+    closeAutocomplete();
+    showDetail(mediaType, id);
+}
+
+function closeAutocomplete() {
+    ['autocomplete-dropdown', 'nav-autocomplete-dropdown'].forEach(id => {
+        const dd = document.getElementById(id);
+        if (dd) { dd.classList.add('hidden'); dd.innerHTML = ''; }
+    });
+    acActiveIndex = -1;
+    acActiveDropdown = null;
+    if (acAbortController) { acAbortController.abort(); acAbortController = null; }
+    clearTimeout(acDebounceTimer);
+}
+
+function initNavSearch() {
+    const input = document.getElementById('nav-search-input');
+    if (!input) return;
+    const dropdownId = 'nav-autocomplete-dropdown';
+
+    input.addEventListener('keydown', e => {
+        const dropdown = document.getElementById(dropdownId);
+        const items = dropdown.querySelectorAll('.ac-item');
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            acActiveIndex = Math.min(acActiveIndex + 1, items.length - 1);
+            updateAcHighlight(items);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            acActiveIndex = Math.max(acActiveIndex - 1, -1);
+            updateAcHighlight(items);
+        } else if (e.key === 'Enter') {
+            if (acActiveIndex >= 0 && items[acActiveIndex]) {
+                e.preventDefault();
+                items[acActiveIndex].click();
+            } else {
+                // Switch to search view and perform a full search
+                const q = input.value.trim();
+                if (q) {
+                    closeAutocomplete();
+                    document.getElementById('search-input').value = q;
+                    navigateTo('search');
+                    performSearch();
+                }
+            }
+        } else if (e.key === 'Escape') {
+            closeAutocomplete();
+            input.blur();
+        }
+    });
+
+    input.addEventListener('input', () => {
+        const q = input.value.trim();
+        if (q.length < 2) { closeAutocomplete(); return; }
+        clearTimeout(acDebounceTimer);
+        acDebounceTimer = setTimeout(() => fetchAutocomplete(q, dropdownId), 350);
+    });
+
+    input.addEventListener('focus', () => {
+        const q = input.value.trim();
+        if (q.length >= 2) {
+            clearTimeout(acDebounceTimer);
+            acDebounceTimer = setTimeout(() => fetchAutocomplete(q, dropdownId), 200);
+        }
+    });
+
+    // Close on outside click
+    document.addEventListener('click', e => {
+        if (!e.target.closest('#nav-search-wrapper')) {
+            const dd = document.getElementById(dropdownId);
+            if (dd && !dd.classList.contains('hidden')) {
+                dd.classList.add('hidden');
+                dd.innerHTML = '';
+            }
+        }
+    });
 }
 
 async function performSearch() {

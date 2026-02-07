@@ -13,6 +13,14 @@
     <!-- ========== Navigation ========== -->
     <nav id="navbar">
         <div class="nav-brand">StreamFinder</div>
+        <div class="nav-search-wrapper hidden" id="nav-search-wrapper">
+            <div class="nav-search-box">
+                <input type="text" id="nav-search-input"
+                       placeholder="Search..."
+                       autocomplete="off">
+            </div>
+            <div id="nav-autocomplete-dropdown" class="autocomplete-dropdown hidden"></div>
+        </div>
         <div class="nav-links">
             <a href="#" data-view="search" class="active">Search</a>
             <a href="#" data-view="calendar">Calendar</a>
@@ -25,11 +33,14 @@
     <main id="view-search" class="view active">
         <div class="search-hero">
             <h1 class="hero-title">Find where to stream anything in Egypt</h1>
-            <div class="search-box">
-                <input type="text" id="search-input"
-                       placeholder="Search movies, TV shows, anime..."
-                       autocomplete="off">
-                <button id="search-btn">Search</button>
+            <div class="search-box-wrapper">
+                <div class="search-box">
+                    <input type="text" id="search-input"
+                           placeholder="Search movies, TV shows, anime..."
+                           autocomplete="off">
+                    <button id="search-btn">Search</button>
+                </div>
+                <div id="autocomplete-dropdown" class="autocomplete-dropdown hidden"></div>
             </div>
             <div class="filter-tabs">
                 <button data-type="multi" class="active">All</button>
