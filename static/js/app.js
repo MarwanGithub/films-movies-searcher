@@ -102,7 +102,7 @@ let acActiveDropdown = null;  // tracks which dropdown is currently active
 
 function initSearch() {
     const input = document.getElementById('search-input');
-    const btn   = document.getElementById('search-btn');
+    const btn = document.getElementById('search-btn');
 
     input.addEventListener('keydown', e => {
         const dd = document.getElementById('autocomplete-dropdown');
@@ -206,10 +206,10 @@ function renderAutocomplete(results, dropdownId) {
     }
 
     dropdown.innerHTML = results.map((item, i) => {
-        const title  = item.title || item.name || 'Unknown';
-        const date   = item.release_date || item.first_air_date || '';
-        const year   = date ? date.substring(0, 4) : '';
-        const type   = item.media_type === 'movie' ? 'Movie' : 'TV';
+        const title = item.title || item.name || 'Unknown';
+        const date = item.release_date || item.first_air_date || '';
+        const year = date ? date.substring(0, 4) : '';
+        const type = item.media_type === 'movie' ? 'Movie' : 'TV';
         const rating = item.vote_average ? item.vote_average.toFixed(1) : '';
         const poster = item.poster_path ? `${TMDB_IMG}/w92${item.poster_path}` : '';
 
@@ -219,8 +219,8 @@ function renderAutocomplete(results, dropdownId) {
                  onmouseenter="acActiveIndex=${i};updateAcHighlight(document.querySelectorAll('#${dropdownId} .ac-item'))">
                 <div class="ac-poster">
                     ${poster
-                        ? `<img src="${poster}" alt="${escapeAttr(title)}" loading="lazy">`
-                        : `<div class="ac-poster-empty">${escapeHtml(title.charAt(0))}</div>`}
+                ? `<img src="${poster}" alt="${escapeAttr(title)}" loading="lazy">`
+                : `<div class="ac-poster-empty">${escapeHtml(title.charAt(0))}</div>`}
                 </div>
                 <div class="ac-info">
                     <div class="ac-title">${escapeHtml(title)}</div>
@@ -385,9 +385,9 @@ function renderSearchResults(append) {
 
 function createCardHTML(item) {
     const title = item.title || item.name || 'Unknown';
-    const date  = item.release_date || item.first_air_date || '';
-    const year  = date ? date.substring(0, 4) : '';
-    const type  = item.media_type === 'movie' ? 'Movie' : 'TV';
+    const date = item.release_date || item.first_air_date || '';
+    const year = date ? date.substring(0, 4) : '';
+    const type = item.media_type === 'movie' ? 'Movie' : 'TV';
     const rating = item.vote_average ? item.vote_average.toFixed(1) : '';
     const poster = item.poster_path ? `${TMDB_IMG}/w342${item.poster_path}` : '';
 
@@ -395,8 +395,8 @@ function createCardHTML(item) {
         <div class="card" onclick="showDetail('${item.media_type}', ${item.id})">
             <div class="card-poster ${poster ? '' : 'no-poster'}">
                 ${poster
-                    ? `<img src="${poster}" alt="${escapeAttr(title)}" loading="lazy">`
-                    : `<span class="no-poster-text">${escapeHtml(title)}</span>`}
+            ? `<img src="${poster}" alt="${escapeAttr(title)}" loading="lazy">`
+            : `<span class="no-poster-text">${escapeHtml(title)}</span>`}
                 <span class="card-type">${type}</span>
                 ${rating ? `<span class="card-rating">${rating}</span>` : ''}
             </div>
@@ -424,15 +424,15 @@ async function showDetail(mediaType, id) {
 
 function renderDetail(data, mediaType) {
     const container = document.getElementById('detail-content');
-    const title    = data.title || data.name || 'Unknown';
-    const date     = data.release_date || data.first_air_date || '';
-    const year     = date ? date.substring(0, 4) : '';
+    const title = data.title || data.name || 'Unknown';
+    const date = data.release_date || data.first_air_date || '';
+    const year = date ? date.substring(0, 4) : '';
     const backdrop = data.backdrop_path ? `${TMDB_IMG}/w1280${data.backdrop_path}` : '';
-    const poster   = data.poster_path ? `${TMDB_IMG}/w500${data.poster_path}` : '';
-    const rating   = data.vote_average ? data.vote_average.toFixed(1) : '';
-    const imdbId   = data.external_ids?.imdb_id;
-    const genres   = (data.genres || []).map(g => g.name).join(', ');
-    const runtime  = data.runtime
+    const poster = data.poster_path ? `${TMDB_IMG}/w500${data.poster_path}` : '';
+    const rating = data.vote_average ? data.vote_average.toFixed(1) : '';
+    const imdbId = data.external_ids?.imdb_id;
+    const genres = (data.genres || []).map(g => g.name).join(', ');
+    const runtime = data.runtime
         ? `${data.runtime} min`
         : data.number_of_seasons
             ? `${data.number_of_seasons} season${data.number_of_seasons > 1 ? 's' : ''}`
@@ -440,8 +440,8 @@ function renderDetail(data, mediaType) {
 
     const egProv = data.watch_providers?.eg || {};
     const deProv = data.watch_providers?.de || {};
-    const cast   = (data.credits?.cast || []).slice(0, 20);
-    const inWL   = isInWatchlist(mediaType, data.id);
+    const cast = (data.credits?.cast || []).slice(0, 20);
+    const inWL = isInWatchlist(mediaType, data.id);
 
     container.innerHTML = `
         <div class="detail-backdrop" ${backdrop ? `style="background-image:url('${backdrop}')"` : ''}>
@@ -490,8 +490,8 @@ function renderDetail(data, mediaType) {
                     <div class="cast-card" onclick="showPerson(${p.id})">
                         <div class="cast-photo">
                             ${p.profile_path
-                                ? `<img src="${TMDB_IMG}/w185${p.profile_path}" alt="${escapeAttr(p.name)}" loading="lazy">`
-                                : `<div class="cast-placeholder">${p.name.charAt(0)}</div>`}
+            ? `<img src="${TMDB_IMG}/w185${p.profile_path}" alt="${escapeAttr(p.name)}" loading="lazy">`
+            : `<div class="cast-placeholder">${p.name.charAt(0)}</div>`}
                         </div>
                         <p class="cast-name">${escapeHtml(p.name)}</p>
                         <p class="cast-character">${escapeHtml(p.character || '')}</p>
@@ -520,19 +520,19 @@ function handleWatchlistToggle(e) {
 
 // Search URL templates for known platforms (provider_id → URL builder)
 const PROVIDER_SEARCH_URLS = {
-    8:    q => `https://www.netflix.com/search?q=${q}`,
-    337:  q => `https://www.disneyplus.com/search/${q}`,
-    119:  q => `https://www.amazon.eg/s?k=${q}&i=instant-video`,
-    9:    q => `https://www.amazon.com/s?k=${q}&i=instant-video`,
-    350:  q => `https://tv.apple.com/search?term=${q}`,
-    283:  q => `https://www.crunchyroll.com/search?q=${q}`,
-    531:  q => `https://www.paramountplus.com/search?q=${q}`,
+    8: q => `https://www.netflix.com/search?q=${q}`,
+    337: q => `https://www.disneyplus.com/search/${q}`,
+    119: q => `https://www.amazon.eg/s?k=${q}&i=instant-video`,
+    9: q => `https://www.amazon.com/s?k=${q}&i=instant-video`,
+    350: q => `https://tv.apple.com/search?term=${q}`,
+    283: q => `https://www.crunchyroll.com/search?q=${q}`,
+    531: q => `https://www.paramountplus.com/search?q=${q}`,
     1899: q => `https://www.max.com/search?q=${q}`,
-    2:    q => `https://tv.apple.com/search?term=${q}`,
-    3:    q => `https://play.google.com/store/search?q=${q}&c=movies`,
-    192:  q => `https://www.youtube.com/results?search_query=${q}+full+movie`,
-    73:   q => `https://www.tubi.tv/search/${q}`,
-    386:  q => `https://www.peacocktv.com/search?q=${q}`,
+    2: q => `https://tv.apple.com/search?term=${q}`,
+    3: q => `https://play.google.com/store/search?q=${q}&c=movies`,
+    192: q => `https://www.youtube.com/results?search_query=${q}+full+movie`,
+    73: q => `https://www.tubi.tv/search/${q}`,
+    386: q => `https://www.peacocktv.com/search?q=${q}`,
     1773: q => `https://shahid.mbc.net/en/search?q=${q}`,
 };
 
@@ -552,8 +552,8 @@ function renderProviders(providers, title, tmdbLink) {
     }
     let html = '';
     if (providers.flatrate) html += providerGroup('Stream', providers.flatrate, title, tmdbLink);
-    if (providers.rent)     html += providerGroup('Rent', providers.rent, title, tmdbLink);
-    if (providers.buy)      html += providerGroup('Buy', providers.buy, title, tmdbLink);
+    if (providers.rent) html += providerGroup('Rent', providers.rent, title, tmdbLink);
+    if (providers.buy) html += providerGroup('Buy', providers.buy, title, tmdbLink);
     return html;
 }
 
@@ -563,16 +563,15 @@ function providerGroup(label, list, title, tmdbLink) {
             <h3>${label}</h3>
             <div class="provider-list">
                 ${list.map(p => {
-                    const url = getProviderUrl(p.provider_id, title || '') || tmdbLink || '#';
-                    return `
-                    <a href="${url}" target="_blank" rel="noopener"
-                       class="provider-badge" onclick="event.stopPropagation()"
-                       title="Search on ${escapeAttr(p.provider_name)}">
+        // URL logic kept for future use — badges are intentionally non-clickable for now
+        // const url = getProviderUrl(p.provider_id, title || '') || tmdbLink || '#';
+        return `
+                    <div class="provider-badge"
+                         title="${escapeAttr(p.provider_name)}">
                         <img src="${TMDB_IMG}/original${p.logo_path}" alt="${escapeAttr(p.provider_name)}">
                         <span>${escapeHtml(p.provider_name)}</span>
-                        <span class="provider-link-icon">&#8599;</span>
-                    </a>`;
-                }).join('')}
+                    </div>`;
+    }).join('')}
             </div>
         </div>`;
 }
@@ -626,22 +625,22 @@ function renderPerson(data) {
 }
 
 function createFilmCard(item) {
-    const title   = item.title || 'Unknown';
-    const date    = item.release_date || '';
-    const year    = date ? date.substring(0, 4) : '';
-    const type    = item.media_type === 'movie' ? 'Movie' : 'TV';
-    const rating  = item.vote_average ? item.vote_average.toFixed(1) : '';
-    const poster  = item.poster_path ? `${TMDB_IMG}/w342${item.poster_path}` : '';
-    const avail   = item.available_in_egypt;
-    const provs   = item.eg_providers?.flatrate || [];
+    const title = item.title || 'Unknown';
+    const date = item.release_date || '';
+    const year = date ? date.substring(0, 4) : '';
+    const type = item.media_type === 'movie' ? 'Movie' : 'TV';
+    const rating = item.vote_average ? item.vote_average.toFixed(1) : '';
+    const poster = item.poster_path ? `${TMDB_IMG}/w342${item.poster_path}` : '';
+    const avail = item.available_in_egypt;
+    const provs = item.eg_providers?.flatrate || [];
 
     return `
         <div class="card ${avail ? '' : 'card-unavailable'}" data-available="${avail}"
              onclick="showDetail('${item.media_type}', ${item.id})">
             <div class="card-poster ${poster ? '' : 'no-poster'}">
                 ${poster
-                    ? `<img src="${poster}" alt="${escapeAttr(title)}" loading="lazy">`
-                    : `<span class="no-poster-text">${escapeHtml(title)}</span>`}
+            ? `<img src="${poster}" alt="${escapeAttr(title)}" loading="lazy">`
+            : `<span class="no-poster-text">${escapeHtml(title)}</span>`}
                 <span class="card-type">${type}</span>
                 ${rating ? `<span class="card-rating">${rating}</span>` : ''}
                 ${avail ? '<span class="card-available">EG</span>' : ''}
@@ -652,8 +651,8 @@ function createFilmCard(item) {
                 ${provs.length ? `
                     <div class="card-providers">
                         ${provs.slice(0, 3).map(pr =>
-                            `<img src="${TMDB_IMG}/original${pr.logo_path}" alt="${escapeAttr(pr.provider_name)}" title="${escapeAttr(pr.provider_name)}">`
-                        ).join('')}
+                `<img src="${TMDB_IMG}/original${pr.logo_path}" alt="${escapeAttr(pr.provider_name)}" title="${escapeAttr(pr.provider_name)}">`
+            ).join('')}
                     </div>` : ''}
             </div>
         </div>`;
@@ -713,7 +712,7 @@ async function toggleWatchlist(mediaType, id, title, posterPath, voteAvg, date) 
 }
 
 function renderWatchlist() {
-    const grid  = document.getElementById('watchlist-grid');
+    const grid = document.getElementById('watchlist-grid');
     const empty = document.getElementById('watchlist-empty');
 
     if (!state.watchlist.length) {
@@ -724,10 +723,10 @@ function renderWatchlist() {
 
     toggleEl('watchlist-empty', false);
     grid.innerHTML = state.watchlist.map(item => {
-        const title  = item.title || item.name || 'Unknown';
-        const date   = item.release_date || item.first_air_date || '';
-        const year   = date ? date.substring(0, 4) : '';
-        const type   = item.media_type === 'movie' ? 'Movie' : 'TV';
+        const title = item.title || item.name || 'Unknown';
+        const date = item.release_date || item.first_air_date || '';
+        const year = date ? date.substring(0, 4) : '';
+        const type = item.media_type === 'movie' ? 'Movie' : 'TV';
         const rating = item.vote_average ? item.vote_average.toFixed(1) : '';
         const poster = item.poster_path ? `${TMDB_IMG}/w342${item.poster_path}` : '';
 
@@ -735,8 +734,8 @@ function renderWatchlist() {
             <div class="card" onclick="showDetail('${item.media_type}', ${item.id})">
                 <div class="card-poster ${poster ? '' : 'no-poster'}">
                     ${poster
-                        ? `<img src="${poster}" alt="${escapeAttr(title)}" loading="lazy">`
-                        : `<span class="no-poster-text">${escapeHtml(title)}</span>`}
+                ? `<img src="${poster}" alt="${escapeAttr(title)}" loading="lazy">`
+                : `<span class="no-poster-text">${escapeHtml(title)}</span>`}
                     <span class="card-type">${type}</span>
                     ${rating ? `<span class="card-rating">${rating}</span>` : ''}
                     <button class="card-remove"
@@ -905,8 +904,8 @@ function renderCalendar(data) {
         html += `<div class="cal-show-filters">
             <button class="filter-btn active" onclick="filterCalendar('all', this)">All</button>
             ${Array.from(shows.entries()).map(([id, name]) =>
-                `<button class="filter-btn" onclick="filterCalendar(${id}, this)">${escapeHtml(name)}</button>`
-            ).join('')}
+            `<button class="filter-btn" onclick="filterCalendar(${id}, this)">${escapeHtml(name)}</button>`
+        ).join('')}
         </div>`;
     }
 
@@ -936,8 +935,8 @@ function renderCalendar(data) {
             const isToday = diffDays === 0;
             const relText = isToday ? 'Today'
                 : diffDays === 1 ? 'Tomorrow'
-                : diffDays < 7 ? `In ${diffDays} days`
-                : '';
+                    : diffDays < 7 ? `In ${diffDays} days`
+                        : '';
             html += `<div class="cal-day-group" data-date="${dayKey}">`;
             html += `<div class="cal-day-label ${isToday ? 'cal-today' : ''}">${dayName}${relText ? `<span class="cal-relative">${relText}</span>` : ''}</div>`;
         }
@@ -947,10 +946,10 @@ function renderCalendar(data) {
         const epCode = `S${String(ep.season_number).padStart(2, '0')}E${String(ep.episode_number).padStart(2, '0')}`;
         const badgeClass = diffDays === 0 ? 'cal-days-today'
             : diffDays <= 7 ? 'cal-days-soon'
-            : 'cal-days-later';
+                : 'cal-days-later';
         const badgeText = diffDays === 0 ? 'TODAY'
             : diffDays === 1 ? '1 day'
-            : `${diffDays} days`;
+                : `${diffDays} days`;
 
         html += `
             <div class="cal-episode" data-show-id="${ep.show_id}" onclick="showDetail('tv', ${ep.show_id})">
@@ -999,7 +998,7 @@ function escapeHtml(str) {
 
 function escapeAttr(str) {
     if (!str) return '';
-    return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function toggleEl(id, show) {
