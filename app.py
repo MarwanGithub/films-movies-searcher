@@ -173,21 +173,26 @@ def get_person_availability(person_id):
 # Watchlist CRUD
 # ---------------------------------------------------------------------------
 
+def get_user_id():
+    """Extract the browser-assigned UUID from the X-User-ID request header."""
+    return request.headers.get('X-User-ID', 'anonymous')
+
+
 @app.route('/api/watchlist', methods=['GET'])
 def get_watchlist_route():
-    return jsonify(load_watchlist())
+    return jsonify(load_watchlist(get_user_id()))
 
 
 @app.route('/api/watchlist', methods=['POST'])
 def add_to_watchlist_route():
     item = request.json
-    watchlist = add_to_watchlist(item)
+    watchlist = add_to_watchlist(item, get_user_id())
     return jsonify({'success': True, 'watchlist': watchlist})
 
 
 @app.route('/api/watchlist/<media_type>/<int:title_id>', methods=['DELETE'])
 def remove_from_watchlist_route(media_type, title_id):
-    watchlist = remove_from_watchlist(media_type, title_id)
+    watchlist = remove_from_watchlist(media_type, title_id, get_user_id())
     return jsonify({'success': True, 'watchlist': watchlist})
 
 
@@ -197,7 +202,7 @@ def remove_from_watchlist_route(media_type, title_id):
 
 @app.route('/api/optimize')
 def optimize():
-    watchlist = load_watchlist()
+    watchlist = load_watchlist(get_user_id())
     if not watchlist:
         return jsonify({'error': 'Watchlist is empty'}), 400
 
@@ -292,7 +297,7 @@ CALENDAR_DAYS = 150
 @app.route('/api/calendar')
 def calendar():
     """Return upcoming episodes (next 150 days) for all TV shows in watchlist."""
-    watchlist = load_watchlist()
+    watchlist = load_watchlist(get_user_id())
     tv_shows = [w for w in watchlist if w.get('media_type') == 'tv']
 
     if not tv_shows:

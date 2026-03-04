@@ -4,6 +4,21 @@
 
 const TMDB_IMG = 'https://image.tmdb.org/t/p';
 
+// ───────────────────────── User Identity ─────────────────────────
+
+/**
+ * Returns a stable UUID for this browser, creating and persisting one
+ * in localStorage on first visit. No login required.
+ */
+function getOrCreateUserId() {
+    let uid = localStorage.getItem('sf_user_id');
+    if (!uid) {
+        uid = crypto.randomUUID();
+        localStorage.setItem('sf_user_id', uid);
+    }
+    return uid;
+}
+
 // ───────────────────────── State ─────────────────────────
 
 const state = {
@@ -69,7 +84,9 @@ function goBack() {
 // ───────────────────────── API helpers ─────────────────────────
 
 async function api(endpoint) {
-    const resp = await fetch(`/api${endpoint}`);
+    const resp = await fetch(`/api${endpoint}`, {
+        headers: { 'X-User-ID': getOrCreateUserId() },
+    });
     if (!resp.ok) {
         const body = await resp.json().catch(() => ({}));
         throw new Error(body.error || `Request failed (${resp.status})`);
@@ -80,7 +97,10 @@ async function api(endpoint) {
 async function apiPost(endpoint, data) {
     const resp = await fetch(`/api${endpoint}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            'X-User-ID': getOrCreateUserId(),
+        },
         body: JSON.stringify(data),
     });
     if (!resp.ok) throw new Error(`Request failed (${resp.status})`);
@@ -88,7 +108,10 @@ async function apiPost(endpoint, data) {
 }
 
 async function apiDelete(endpoint) {
-    const resp = await fetch(`/api${endpoint}`, { method: 'DELETE' });
+    const resp = await fetch(`/api${endpoint}`, {
+        method: 'DELETE',
+        headers: { 'X-User-ID': getOrCreateUserId() },
+    });
     if (!resp.ok) throw new Error(`Request failed (${resp.status})`);
     return resp.json();
 }
