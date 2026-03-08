@@ -30,6 +30,7 @@ const state = {
     currentPage: 1,
     totalPages: 1,
     watchlist: [],
+    user: null,
 };
 
 // ───────────────────────── Init ─────────────────────────
@@ -37,6 +38,7 @@ const state = {
 document.addEventListener('DOMContentLoaded', () => {
     initNavigation();
     initSearch();
+    initAuth();
     loadWatchlist();
 });
 
@@ -1008,6 +1010,144 @@ function filterCalendar(showId, btn) {
         const visible = group.querySelectorAll('.cal-episode:not([style*="display: none"])');
         group.style.display = visible.length ? '' : 'none';
     });
+}
+
+// ───────────────────────── Auth ─────────────────────────
+
+async function initAuth() {
+    try {
+        const resp = await fetch('/api/auth/me');
+        const data = await resp.json();
+        state.user = data.user;
+    } catch (_) {
+        state.user = null;
+    }
+    updateAuthUI();
+
+    document.querySelectorAll('.auth-tab').forEach(tab => {
+        tab.addEventListener('click', () => switchAuthTab(tab.dataset.tab));
+    });
+    document.getElementById('login-form').addEventListener('submit', handleLogin);
+    document.getElementById('register-form').addEventListener('submit', handleRegister);
+    document.getElementById('auth-modal').addEventListener('click', e => {
+        if (e.target === e.currentTarget) closeAuthModal();
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && !document.getElementById('auth-modal').classList.contains('hidden')) {
+            closeAuthModal();
+        }
+    });
+}
+
+function updateAuthUI() {
+    const authBtn = document.getElementById('auth-btn');
+    const userMenu = document.getElementById('user-menu');
+    const userName = document.getElementById('user-display-name');
+
+    if (state.user) {
+        authBtn.classList.add('hidden');
+        userMenu.classList.remove('hidden');
+        userName.textContent = state.user.username;
+    } else {
+        authBtn.classList.remove('hidden');
+        userMenu.classList.add('hidden');
+    }
+}
+
+function openAuthModal(tab = 'login') {
+    document.getElementById('auth-modal').classList.remove('hidden');
+    switchAuthTab(tab);
+    document.getElementById('login-error').classList.add('hidden');
+    document.getElementById('register-error').classList.add('hidden');
+}
+
+function closeAuthModal() {
+    document.getElementById('auth-modal').classList.add('hidden');
+    document.getElementById('login-form').reset();
+    document.getElementById('register-form').reset();
+    document.getElementById('login-error').classList.add('hidden');
+    document.getElementById('register-error').classList.add('hidden');
+}
+
+function switchAuthTab(tab) {
+    document.querySelectorAll('.auth-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.tab === tab);
+    });
+    document.getElementById('login-form').classList.toggle('hidden', tab !== 'login');
+    document.getElementById('register-form').classList.toggle('hidden', tab !== 'register');
+}
+
+async function handleLogin(e) {
+    e.preventDefault();
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const errorEl = document.getElementById('login-error');
+    errorEl.classList.add('hidden');
+
+    try {
+        const resp = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password, anonymous_id: getOrCreateUserId() }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+            errorEl.textContent = data.error || 'Login failed';
+            errorEl.classList.remove('hidden');
+            return;
+        }
+        state.user = data.user;
+        updateAuthUI();
+        closeAuthModal();
+        await loadWatchlist();
+    } catch (err) {
+        errorEl.textContent = 'Network error. Please try again.';
+        errorEl.classList.remove('hidden');
+    }
+}
+
+async function handleRegister(e) {
+    e.preventDefault();
+    const username = document.getElementById('register-username').value.trim();
+    const email = document.getElementById('register-email').value.trim();
+    const password = document.getElementById('register-password').value;
+    const confirm = document.getElementById('register-confirm').value;
+    const errorEl = document.getElementById('register-error');
+    errorEl.classList.add('hidden');
+
+    if (password !== confirm) {
+        errorEl.textContent = 'Passwords do not match';
+        errorEl.classList.remove('hidden');
+        return;
+    }
+
+    try {
+        const resp = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, email, password, anonymous_id: getOrCreateUserId() }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+            errorEl.textContent = data.error || 'Registration failed';
+            errorEl.classList.remove('hidden');
+            return;
+        }
+        state.user = data.user;
+        updateAuthUI();
+        closeAuthModal();
+        await loadWatchlist();
+    } catch (err) {
+        errorEl.textContent = 'Network error. Please try again.';
+        errorEl.classList.remove('hidden');
+    }
+}
+
+async function logout() {
+    try { await fetch('/api/auth/logout', { method: 'POST' }); } catch (_) {}
+    state.user = null;
+    updateAuthUI();
+    await loadWatchlist();
 }
 
 // ───────────────────────── Utilities ─────────────────────────

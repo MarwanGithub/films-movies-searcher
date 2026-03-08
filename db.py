@@ -8,7 +8,9 @@ sent as the X-User-ID request header. No login required.
 import os
 import json
 import sqlite3
+import uuid
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
 
 DB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 DB_PATH = os.environ.get('DATABASE_PATH', os.path.join(DB_DIR, 'streamfinder.db'))
@@ -40,6 +42,13 @@ def _init_tables(conn):
             release_date TEXT,
             added_at     TEXT,
             PRIMARY KEY (id, media_type, user_id)
+        );
+        CREATE TABLE IF NOT EXISTS users (
+            id            TEXT PRIMARY KEY,
+            email         TEXT UNIQUE NOT NULL,
+            username      TEXT NOT NULL,
+            password_hash TEXT NOT NULL,
+            created_at    TEXT
         );
     ''')
 
@@ -149,3 +158,71 @@ def migrate_json_watchlist():
     # Rename so we don't re-import
     os.rename(json_path, json_path + '.migrated')
     print(f'Migrated {len(items)} watchlist items from JSON to SQLite.')
+
+
+# ---------------------------------------------------------------------------
+# User helpers
+# ---------------------------------------------------------------------------
+
+def create_user(username: str, email: str, password: str):
+    conn = get_db()
+    try:
+        user_id = str(uuid.uuid4())
+        now = datetime.now().isoformat()
+        conn.execute(
+            'INSERT INTO users (id, email, username, password_hash, created_at) VALUES (?, ?, ?, ?, ?)',
+            (user_id, email, username, generate_password_hash(password), now),
+        )
+        conn.commit()
+        return {'id': user_id, 'email': email, 'username': username}
+    finally:
+        conn.close()
+
+
+def get_user_by_email(email: str):
+    conn = get_db()
+    try:
+        row = conn.execute('SELECT * FROM users WHERE email = ?', (email,)).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def get_user_by_id(user_id: str):
+    conn = get_db()
+    try:
+        row = conn.execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def verify_user(email: str, password: str):
+    """Check credentials and return user dict or None."""
+    user = get_user_by_email(email)
+    if not user or not check_password_hash(user['password_hash'], password):
+        return None
+    return user
+
+
+def merge_watchlist(from_user_id: str, to_user_id: str):
+    """Copy watchlist items from an anonymous browser session into an account,
+    then delete the anonymous copies."""
+    if not from_user_id or from_user_id == to_user_id:
+        return
+    conn = get_db()
+    try:
+        rows = conn.execute(
+            'SELECT * FROM watchlist WHERE user_id = ?', (from_user_id,)
+        ).fetchall()
+        for row in rows:
+            conn.execute('''
+                INSERT OR IGNORE INTO watchlist
+                    (id, media_type, user_id, title, poster_path, vote_average, release_date, added_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (row['id'], row['media_type'], to_user_id, row['title'],
+                  row['poster_path'], row['vote_average'], row['release_date'], row['added_at']))
+        conn.execute('DELETE FROM watchlist WHERE user_id = ?', (from_user_id,))
+        conn.commit()
+    finally:
+        conn.close()

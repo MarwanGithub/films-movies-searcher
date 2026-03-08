@@ -27,6 +27,13 @@
             <a href="#" data-view="watchlist">Watchlist <span id="watchlist-count" class="badge">0</span></a>
             <a href="#" data-view="optimizer">Optimizer</a>
         </div>
+        <div class="nav-account">
+            <button id="auth-btn" class="btn-account" onclick="openAuthModal()">Sign In</button>
+            <div id="user-menu" class="user-menu hidden">
+                <span id="user-display-name"></span>
+                <button onclick="logout()" class="btn-logout">Log Out</button>
+            </div>
+        </div>
     </nav>
 
     <!-- ========== Search View ========== -->
@@ -114,6 +121,49 @@
         </div>
         <div id="optimizer-results"></div>
     </main>
+
+    <!-- ========== Auth Modal ========== -->
+    <div id="auth-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeAuthModal()">&times;</button>
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-tab="login">Log In</button>
+                <button class="auth-tab" data-tab="register">Create Account</button>
+            </div>
+            <form id="login-form" class="auth-form">
+                <div class="form-group">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" required>
+                </div>
+                <div id="login-error" class="auth-error hidden"></div>
+                <button type="submit" class="btn-primary auth-submit">Log In</button>
+            </form>
+            <form id="register-form" class="auth-form hidden">
+                <div class="form-group">
+                    <label for="register-username">Display Name</label>
+                    <input type="text" id="register-username" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-email">Email</label>
+                    <input type="email" id="register-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Password</label>
+                    <input type="password" id="register-password" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label for="register-confirm">Confirm Password</label>
+                    <input type="password" id="register-confirm" required minlength="6">
+                </div>
+                <div id="register-error" class="auth-error hidden"></div>
+                <button type="submit" class="btn-primary auth-submit">Create Account</button>
+            </form>
+        </div>
+    </div>
 
     <script src="/static/js/app.js"></script>
 </body>

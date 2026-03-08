@@ -3,13 +3,16 @@ from datetime import datetime, timedelta
 from itertools import combinations
 from concurrent.futures import ThreadPoolExecutor
 
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, session
 
 from config import PROVIDER_PRICES, WATCH_REGION, MY_PLATFORMS
 from services.tmdb import TMDBService, TMDBError
-from db import load_watchlist, add_to_watchlist, remove_from_watchlist, migrate_json_watchlist
+from db import (load_watchlist, add_to_watchlist, remove_from_watchlist,
+                migrate_json_watchlist, create_user, get_user_by_email,
+                get_user_by_id, verify_user, merge_watchlist)
 
 app = Flask(__name__)
+app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
 tmdb = TMDBService()
 
 # Migrate any existing JSON watchlist to SQLite on startup
@@ -174,7 +177,9 @@ def get_person_availability(person_id):
 # ---------------------------------------------------------------------------
 
 def get_user_id():
-    """Extract the browser-assigned UUID from the X-User-ID request header."""
+    """Return the account user ID from session, or fall back to anonymous browser UUID."""
+    if 'user_id' in session:
+        return session['user_id']
     return request.headers.get('X-User-ID', 'anonymous')
 
 
@@ -194,6 +199,76 @@ def add_to_watchlist_route():
 def remove_from_watchlist_route(media_type, title_id):
     watchlist = remove_from_watchlist(media_type, title_id, get_user_id())
     return jsonify({'success': True, 'watchlist': watchlist})
+
+
+# ---------------------------------------------------------------------------
+# Authentication
+# ---------------------------------------------------------------------------
+
+@app.route('/api/auth/register', methods=['POST'])
+def auth_register():
+    data = request.json or {}
+    username = data.get('username', '').strip()
+    email = data.get('email', '').strip().lower()
+    password = data.get('password', '')
+    anonymous_id = data.get('anonymous_id', '')
+
+    if not username or not email or not password:
+        return jsonify({'error': 'All fields are required'}), 400
+    if len(password) < 6:
+        return jsonify({'error': 'Password must be at least 6 characters'}), 400
+    if get_user_by_email(email):
+        return jsonify({'error': 'Email already registered'}), 409
+
+    user = create_user(username, email, password)
+    if anonymous_id:
+        merge_watchlist(anonymous_id, user['id'])
+
+    session['user_id'] = user['id']
+    return jsonify({'user': user}), 201
+
+
+@app.route('/api/auth/login', methods=['POST'])
+def auth_login():
+    data = request.json or {}
+    email = data.get('email', '').strip().lower()
+    password = data.get('password', '')
+    anonymous_id = data.get('anonymous_id', '')
+
+    if not email or not password:
+        return jsonify({'error': 'Email and password are required'}), 400
+
+    user = verify_user(email, password)
+    if not user:
+        return jsonify({'error': 'Invalid email or password'}), 401
+
+    if anonymous_id:
+        merge_watchlist(anonymous_id, user['id'])
+
+    session['user_id'] = user['id']
+    return jsonify({
+        'user': {'id': user['id'], 'username': user['username'], 'email': user['email']}
+    })
+
+
+@app.route('/api/auth/logout', methods=['POST'])
+def auth_logout():
+    session.pop('user_id', None)
+    return jsonify({'success': True})
+
+
+@app.route('/api/auth/me')
+def auth_me():
+    uid = session.get('user_id')
+    if not uid:
+        return jsonify({'user': None})
+    user = get_user_by_id(uid)
+    if not user:
+        session.pop('user_id', None)
+        return jsonify({'user': None})
+    return jsonify({
+        'user': {'id': user['id'], 'username': user['username'], 'email': user['email']}
+    })
 
 
 # ---------------------------------------------------------------------------
