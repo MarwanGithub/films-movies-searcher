@@ -13,6 +13,7 @@ from db import (load_watchlist, add_to_watchlist, remove_from_watchlist,
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 tmdb = TMDBService()
 
 # Migrate any existing JSON watchlist to SQLite on startup
@@ -224,6 +225,7 @@ def auth_register():
     if anonymous_id:
         merge_watchlist(anonymous_id, user['id'])
 
+    session.permanent = True
     session['user_id'] = user['id']
     return jsonify({'user': user}), 201
 
@@ -245,6 +247,7 @@ def auth_login():
     if anonymous_id:
         merge_watchlist(anonymous_id, user['id'])
 
+    session.permanent = True
     session['user_id'] = user['id']
     return jsonify({
         'user': {'id': user['id'], 'username': user['username'], 'email': user['email']}
